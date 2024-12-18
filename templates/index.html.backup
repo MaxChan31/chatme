@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat With Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #141414;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 92vh;
+            background: #1a1a1a;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin: 20px;
+        }
+
+        .title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 2.2rem;
+            background: linear-gradient(90deg, #FF1B6B, #45CAFF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            padding: 16px 20px;
+            margin: 0;
+            position: relative;
+            text-shadow: 0 0 20px rgba(255, 27, 107, 0.3);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .title::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            z-index: -1;
+            background: linear-gradient(90deg, #FF1B6B, #45CAFF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: blur(8px);
+            opacity: 0.7;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                filter: drop-shadow(0 0 10px rgba(255, 27, 107, 0.3));
+            }
+            50% {
+                filter: drop-shadow(0 0 20px rgba(69, 202, 255, 0.5));
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .message {
+            display: inline-block;
+            margin-bottom: 10px;
+            position: relative;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease;
+            clear: both;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .message:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+            box-shadow: 0 5px 15px rgba(34, 139, 34, 0.2);
+        }
+
+        .message-content {
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .message-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .message:hover .message-content::before {
+            transform: translateX(100%);
+        }
+
+        .user-message {
+            float: right;
+        }
+
+        .user-message .message-content {
+            background: #2ECC71;
+            color: white;
+            border-radius: 12px 12px 2px 12px;
+        }
+
+        .assistant-message {
+            float: left;
+        }
+
+        .assistant-message .message-content {
+            background: #2a2a2a;
+            color: #e5e7eb;
+            border-radius: 12px 12px 12px 2px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .message-timestamp {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            position: absolute;
+            right: 0;
+            bottom: -16px;
+            font-style: italic;
+        }
+
+        .input-container {
+            padding: 12px 20px;
+            background: #1a1a1a;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #userInput {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            height: 36px;
+        }
+
+        #userInput:focus {
+            outline: none;
+            border-color: #2ECC71;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            background: #2ECC71;
+            color: white;
+            border: none;
+            padding: 0 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            height: 36px;
+            line-height: 36px;
+            font-size: 0.9rem;
+            min-width: 50px;
+            white-space: nowrap;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .btn:hover {
+            background: #27AE60;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.2);
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .loading-dots span {
+            width: 6px;
+            height: 6px;
+            background: #2ECC71;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings-btn {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 6px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            transform: rotate(180deg);
+        }
+
+        .settings-btn svg {
+            filter: none;
+            width: 18px;
+            height: 18px;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #apiKeyInput {
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <h1 class="title">Chat With Assistant</h1>
+        <button onclick="showApiKeyModal()" class="settings-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+            </svg>
+        </button>
+
+        <div class="chat-container" id="chatContainer">
+            {% for message in conversation %}
+            <div class="message {% if message.role == 'user' %}user-message{% else %}assistant-message{% endif %}">
+                <div class="message-content">{{ message.content }}</div>
+                <div class="message-timestamp">{{ message.timestamp }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="input-container">
+            <div class="flex gap-3">
+                <input type="text" id="userInput" placeholder="Ask something...">
+                <button onclick="sendMessage()" class="btn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="apiKeyModal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center">
+        <div class="modal-content rounded-xl p-6 max-w-md w-full mx-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-100">设置 API Key</h2>
+            <input type="password" id="apiKeyInput" class="w-full px-4 py-2 rounded-lg mb-4" placeholder="输入您的 API Key">
+            <div class="flex justify-end gap-3">
+                <button onclick="hideApiKeyModal()" class="btn">取消</button>
+                <button onclick="updateApiKey()" class="btn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function scrollToBottom() {
+            const container = document.getElementById('chatContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showApiKeyModal() {
+            document.getElementById('apiKeyModal').classList.remove('hidden');
+        }
+
+        function hideApiKeyModal() {
+            document.getElementById('apiKeyModal').classList.add('hidden');
+        }
+
+        async function updateApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value;
+            const response = await fetch('/update_api_key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ api_key: apiKey }),
+            });
+
+            if (response.ok) {
+                hideApiKeyModal();
+                document.getElementById('apiKeyInput').value = '';
+            }
+        }
+
+        function createLoadingDots() {
+            return `<div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>`;
+        }
+
+        function typeWriter(element, text, speed = 30) {
+            let i = 0;
+            element.innerHTML = '';
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            const timestamp = new Date().toLocaleTimeString();
+            userInput.value = '';
+            userInput.disabled = true;
+
+            // 立即添加用户消息
+            const chatContainer = document.getElementById('chatContainer');
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message user-message';
+            userMessageDiv.innerHTML = `
+                <div class="message-content">${message}</div>
+                <div class="message-timestamp">${timestamp}</div>
+            `;
+            chatContainer.appendChild(userMessageDiv);
+
+            // 添加助手的加载消息
+            const assistantMessageDiv = document.createElement('div');
+            assistantMessageDiv.className = 'message assistant-message';
+            assistantMessageDiv.innerHTML = `
+                <div class="message-content">${createLoadingDots()}</div>
+                <div class="message-timestamp">${timestamp}</div>
+            `;
+            chatContainer.appendChild(assistantMessageDiv);
+            scrollToBottom();
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_input: message }),
+                });
+
+                const data = await response.json();
+
+                if (response.status === 401) {
+                    chatContainer.removeChild(assistantMessageDiv);
+                    showApiKeyModal();
+                    return;
+                }
+
+                // 更新助手消息内容
+                const contentDiv = assistantMessageDiv.querySelector('.message-content');
+                typeWriter(contentDiv, data.response);
+
+            } catch (error) {
+                console.error('Error:', error);
+                const contentDiv = assistantMessageDiv.querySelector('.message-content');
+                contentDiv.innerHTML = '抱歉，发生了错误，请重试。';
+            } finally {
+                userInput.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // 监听回车键
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 初始滚动到底部
+        scrollToBottom();
+    </script>
+</body>
+</html> 

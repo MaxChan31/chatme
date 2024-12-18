@@ -1,0 +1,3 @@
+([('ChatAssistant',
+   '/Users/mingkaichen/Cursor/ChatGPT1213 copy/dist/ChatAssistant',
+   'EXECUTABLE')],)
