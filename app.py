@@ -27,20 +27,13 @@ app.wsgi_app = SharedDataMiddleware(
     },
 )
 
-# 密码到API密钥的映射
-API_PASSWORD_MAP = {
-    "CMK1213": "sk-0b44b844cd3940daa77f6eb0089fff32"  # 请替换为你的实际密码和API密钥
-}
+# 移除API_PASSWORD_MAP，直接使用固定的API密钥
+API_KEY = "sk-0b44b844cd3940daa77f6eb0089fff32"  # 您的API密钥
 
 
 def get_api_key():
-    """从session中获取API密钥"""
-    return session.get("api_key")
-
-
-def verify_password(password):
-    """验证密码并返回对应的API密钥"""
-    return API_PASSWORD_MAP.get(password)
+    """直接返回内置的API密钥"""
+    return API_KEY
 
 
 BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
@@ -174,19 +167,10 @@ def generate_title(messages):
 
 @app.route("/verify_api_key", methods=["POST"])
 def verify_key():
-    password = request.json.get("api_key")  # 用户输入的是密码
-    if not password:
-        return jsonify({"status": "error", "message": "请输入密码"}), 400
-
-    # 验证密码并获取API密钥
-    api_key = verify_password(password)
-    if not api_key:
-        return jsonify({"status": "error", "message": "密码错误"}), 401
-
-    # 验证API密钥是否有效
-    if verify_api_key(api_key):
-        session["api_key"] = api_key  # 存储真实的API密钥
-        return jsonify({"status": "success", "message": "密码验证成功"})
+    # 直接验证内置的API密钥
+    if verify_api_key(API_KEY):
+        session["api_key"] = API_KEY
+        return jsonify({"status": "success", "message": "验证成功"})
     else:
         return jsonify({"status": "error", "message": "API密钥无效"}), 401
 
@@ -255,7 +239,7 @@ def ask():
             ]
         )
 
-        # 检查是否需要生成标题
+        # 检查是否��要生成标题
         messages_count = len(conversations[conversation_id]["messages"])
         should_generate_title = (
             messages_count == 2  # 第一次对话后
@@ -362,7 +346,7 @@ async def generate_conversation_title(messages):
     )
 
     # 构建提示
-    prompt = f"请为以下对话生成一个简短的标题（不超过15个字）：\n\n{conversation_text}"
+    prompt = f"请为以下对话生成��个简短的标题（不超过15个字）：\n\n{conversation_text}"
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     data = {
